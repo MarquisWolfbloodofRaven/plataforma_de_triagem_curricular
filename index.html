@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Triagem de currículos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.5/tesseract.min.js"></script>
+<style>
+:root{--bg:#F3F4F6;--surface:#fff;--ink:#14171C;--mute:#667085;--line:#E2E5EA;--accent:#2B4EFF;--ok:#18794E;--okbg:#E6F4EC;--bad:#B3392B;--badbg:#FBEBE8;--r:10px}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font:15px/1.55 "Schibsted Grotesk",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{font-weight:700;letter-spacing:-.02em;font-size:18px}
+.privacy{color:var(--mute);font-size:13px}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:32px;max-width:1160px;margin:0 auto;padding:32px}
+aside{align-self:start;position:sticky;top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+aside h2,.listhead h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.field{margin-top:20px}
+.field label{display:block;font-weight:500;margin-bottom:6px}
+.hint{color:var(--mute);font-size:13px;margin-top:4px}
+input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input:focus,select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px #2B4EFF22}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 10px;border-radius:999px;background:var(--bg);font-size:13px}
+.tag button{border:0;background:none;cursor:pointer;color:var(--mute);font-size:15px;line-height:1;padding:0 3px}
+.tag button:hover{color:var(--bad)}
+main{min-width:0}
+.drop{display:block;border:1.5px dashed #C4C9D2;border-radius:var(--r);background:var(--surface);padding:56px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop.compact{padding:18px 24px}
+.drop:hover,.drop.over{border-color:var(--accent);background:#F7F8FF}
+.drop strong{display:block;font-size:20px;letter-spacing:-.02em;font-weight:600}
+.drop.compact strong{font-size:15px}
+.drop span{color:var(--mute);font-size:14px}
+.drop input{position:absolute;opacity:0;pointer-events:none}
+.listhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 12px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;font-size:14px}
+.btn:hover{border-color:#B8BEC9}
+.chk{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mute);cursor:pointer}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+.row.out{opacity:.62}
+.rowmain{display:grid;grid-template-columns:64px 1fr auto;gap:16px;align-items:center;padding:16px 18px;width:100%;border:0;background:none;text-align:left;cursor:pointer}
+.score{font-size:28px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.bar{height:3px;border-radius:2px;background:var(--line);margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .35s}
+.out .bar i{background:#B8BEC9}
+.who b{font-weight:600;font-size:16px}
+.who small{display:block;color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status{font-size:13px;font-weight:500;padding:3px 10px;border-radius:999px}
+.s-forte{background:var(--okbg);color:var(--ok)}
+.s-poss{background:var(--bg);color:var(--ink)}
+.s-nao{background:var(--badbg);color:var(--bad)}
+.detail{padding:4px 18px 18px 98px;border-top:1px solid var(--line)}
+.detail h3{font-size:13px;font-weight:600;margin:16px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:2px 10px;border-radius:999px}
+.chip.y{background:var(--okbg);color:var(--ok)}
+.chip.n{background:var(--badbg);color:var(--bad)}
+.facts{display:flex;gap:20px;flex-wrap:wrap;color:var(--mute);font-size:13px;margin-top:14px}
+blockquote{border-left:2px solid var(--line);padding-left:12px;color:var(--mute);font-size:13px;margin-top:6px}
+blockquote mark{background:#2B4EFF1F;color:var(--ink);border-radius:2px;padding:0 1px}
+.rm{margin-top:16px;border:0;background:none;color:var(--bad);cursor:pointer;font-size:13px;padding:0}
+.empty{color:var(--mute);text-align:center;padding:40px 0}
+@media(max-width:860px){.layout{grid-template-columns:1fr;padding:16px}aside{position:static}header{padding:16px}.detail{padding-left:18px}.rowmain{grid-template-columns:52px 1fr}.rowmain .status{grid-column:2;justify-self:start}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="brand">Triagem</div><div class="privacy">Os arquivos são lidos no seu navegador e não são enviados a nenhum servidor.</div></header>
+<div class="layout">
+<aside>
+  <h2>Perfil da vaga</h2>
+  <div class="field"><label for="in-must">Requisitos obrigatórios</label>
+    <input type="text" id="in-must" placeholder="Ex.: Python, SQL"><div class="tags" id="t-must"></div>
+    <p class="hint">Quem não tiver todos aparece como “Não atende”. Separe sinônimos com | (ex.: Gestão de projetos|PMO). Siglas comuns, como JS e JavaScript, já são reconhecidas.</p></div>
+  <div class="field"><label for="in-nice">Requisitos desejáveis</label>
+    <input type="text" id="in-nice" placeholder="Ex.: Docker, inglês"><div class="tags" id="t-nice"></div>
+    <p class="hint">Aumentam a pontuação. Pressione Enter para adicionar.</p></div>
+  <div class="field"><label for="years">Experiência mínima (anos)</label><input type="number" id="years" min="0" max="40" placeholder="0"></div>
+  <div class="field"><label for="edu">Formação mínima</label>
+    <select id="edu"><option value="0">Indiferente</option><option value="1">Ensino médio</option><option value="2">Técnico</option><option value="3">Graduação</option><option value="4">Pós-graduação</option></select></div>
+  <div class="field"><label for="city">Cidade ou região</label><input type="text" id="city" placeholder="Ex.: Porto Alegre"></div>
+</aside>
+<main>
+  <label class="drop" id="drop"><strong>Adicione os currículos</strong><span id="dropmsg">Arraste PDF, DOCX, TXT ou foto do currículo, ou clique para escolher</span>
+    <input type="file" id="file" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png"></label>
+  <div id="results"></div>
+</main>
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const show=x=>esc(x).replace(/\s*\|\s*/g,' / ');
+const SYN=[['javascript','js','ecmascript'],['typescript','ts'],['node.js','nodejs','node'],['postgresql','postgres'],['kubernetes','k8s'],['machine learning','aprendizado de maquina'],['inteligencia artificial','ia','ai'],['recursos humanos','rh','hr'],['gestao de projetos','gerenciamento de projetos','project management'],['ingles','english'],['espanhol','spanish'],['power bi','powerbi'],['c#','csharp','c sharp'],['amazon web services','aws'],['google cloud','gcp'],['ci/cd','cicd','integracao continua'],['scrum','metodologias ageis'],['atendimento ao cliente','customer service','sac'],['front-end','frontend','front end'],['back-end','backend','back end'],['ux','experiencia do usuario','user experience'],['qa','garantia de qualidade','quality assurance']].map(g=>g.map(norm));
+const variants=term=>{const parts=term.split('|').map(x=>norm(x.trim())).filter(Boolean),out=new Set(parts);parts.forEach(p=>SYN.forEach(g=>{if(g.includes(p))g.forEach(x=>out.add(x))}));return[...out]};
+const find=(t,term)=>{for(const v of variants(term)){const m=new RegExp('(^|[^a-z0-9+#])('+reEsc(v)+(v.length>3?'(?:s|es)?':'')+')(?![a-z0-9+#])').exec(t);if(m)return{i:m.index+m[1].length,len:m[2].length}}return null};
+
+let S={must:[],nice:[],years:0,edu:0,city:''},cands=[],open=new Set(),hideOut=false,sortBy='score';
+try{Object.assign(S,JSON.parse(localStorage.getItem('triagem')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('triagem',JSON.stringify(S))}catch(e){}};
+
+/* ---------- critérios ---------- */
+function renderTags(k){
+  $('#t-'+k).innerHTML=S[k].map((t,i)=>`<span class="tag">${show(t)}<button aria-label="Remover ${esc(t)}" data-k="${k}" data-i="${i}">×</button></span>`).join('');
+}
+['must','nice'].forEach(k=>{
+  const el=$('#in-'+k);
+  const add=()=>{el.value.split(',').map(x=>x.trim()).filter(x=>x&&!S[k].includes(x)).forEach(x=>S[k].push(x));el.value='';renderTags(k);save();render()};
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();add()}});
+  el.addEventListener('blur',add);
+  renderTags(k);
+});
+document.addEventListener('click',e=>{const b=e.target.closest('.tag button');if(b){S[b.dataset.k].splice(+b.dataset.i,1);renderTags(b.dataset.k);save();render()}});
+$('#years').value=S.years||'';$('#edu').value=S.edu;$('#city').value=S.city;
+$('#years').oninput=e=>{S.years=+e.target.value||0;save();render()};
+$('#edu').onchange=e=>{S.edu=+e.target.value;save();render()};
+$('#city').oninput=e=>{S.city=e.target.value;save();render()};
+
+/* ---------- leitura de arquivos ---------- */
+const msg=$('#dropmsg'),DEF=msg.textContent,say=t=>{msg.textContent=t||DEF};
+let wk=null;const worker=async()=>wk||(wk=await Tesseract.createWorker('por+eng'));
+const ocr=async src=>{say('Carregando leitor de imagens…');const w=await worker();return(await w.recognize(src)).data.text};
+async function readPdf(buf,name){
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;let out='';
+  for(let p=1;p<=pdf.numPages;p++){
+    const tc=await (await pdf.getPage(p)).getTextContent();let y=null;
+    for(const it of tc.items){const ny=it.transform[5];if(y!==null&&Math.abs(ny-y)>2)out+='\n';out+=it.str+' ';y=ny}
+    out+='\n';
+  }
+  if(out.replace(/\s/g,'').length<80){
+    const n=Math.min(pdf.numPages,3);out='';
+    for(let p=1;p<=n;p++){
+      const page=await pdf.getPage(p),vp=page.getViewport({scale:2}),cv=document.createElement('canvas');
+      cv.width=vp.width;cv.height=vp.height;
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      say(`Lendo ${name} por imagem (${p}/${n})…`);
+      out+=await ocr(cv)+'\n';
+    }
+    say();
+  }
+  return out;
+}
+async function readFile(f){
+  const ext=f.name.split('.').pop().toLowerCase();
+  if(ext==='pdf')return readPdf(await f.arrayBuffer(),f.name);
+  if(ext==='docx')return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value;
+  if(['jpg','jpeg','png'].includes(ext)){const t=await ocr(f);say();return t}
+  return f.text();
+}
+async function addFiles(list){
+  for(const f of list){
+    try{
+      const raw=(await readFile(f)).replace(/[ \t]+/g,' ');
+      if(raw.trim().length<30)throw new Error('sem texto');
+      cands.push({id:crypto.randomUUID(),file:f.name,raw,...contact(raw,f.name)});
+    }catch(e){say();cands.push({id:crypto.randomUUID(),file:f.name,raw:'',name:f.name,email:'',phone:'',err:true})}
+  }
+  render();
+}
+function contact(raw,fn){
+  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const nm=lines.slice(0,6).find(l=>l.length<50&&!/[@\d:/]/.test(l)&&l.split(' ').length>=2&&l.split(' ').length<=5);
+  return{name:nm||fn.replace(/\.[^.]+$/,''),
+    email:(raw.match(/[\w.+-]+@[\w-]+\.[\w.-]+/)||[''])[0],
+    phone:(raw.match(/(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[-\s]?\d{4}/)||[''])[0]};
+}
+
+/* ---------- análise ---------- */
+function analyze(c){
+  if(c.err)return{score:0,status:'nao',err:true,hitM:[],missM:[],hitN:[],missN:[],years:0,level:0,city:false,snips:[]};
+  const t=norm(c.raw),snips=[];
+  const test=terms=>{const h=[],m=[];terms.forEach(x=>{const r=find(t,x);if(!r)m.push(x);else{h.push(x);if(snips.length<6)snips.push({x,i:r.i,len:r.len})}});return[h,m]};
+  const [hitM,missM]=test(S.must),[hitN,missN]=test(S.nice);
+  let years=0;for(const m of t.matchAll(/(\d{1,2})\s*\+?\s*anos?(?!\s*de\s*idade)/g))years=Math.max(years,+m[1]);
+  const level=/doutor|mestrad|mba|pos-?gradua|especializa/.test(t)?4:/gradua|bacharel|licenciatura|tecnologo|ensino superior|superior completo/.test(t)?3:/\btecnico\b|curso tecnico/.test(t)?2:/ensino medio/.test(t)?1:0;
+  const city=S.city.trim()?!!find(t,S.city):false;
+  const parts=[];
+  if(S.must.length)parts.push([50,hitM.length/S.must.length]);
+  if(S.nice.length)parts.push([25,hitN.length/S.nice.length]);
+  if(S.years)parts.push([15,Math.min(1,years/S.years)]);
+  if(S.edu)parts.push([10,Math.min(1,level/S.edu)]);
+  if(S.city.trim())parts.push([10,city?1:0]);
+  const w=parts.reduce((a,p)=>a+p[0],0);
+  const score=w?Math.round(parts.reduce((a,p)=>a+p[0]*p[1],0)/w*100):0;
+  const status=missM.length?'nao':score>=75?'forte':'poss';
+  return{score,status,hitM,missM,hitN,missN,years,level,city,snips};
+}
+const LV=['não identificada','Ensino médio','Técnico','Graduação','Pós-graduação'];
+const ST={forte:['Forte','s-forte'],poss:['Possível','s-poss'],nao:['Não atende','s-nao']};
+
+/* ---------- interface ---------- */
+function render(){
+  const drop=$('#drop');drop.classList.toggle('compact',cands.length>0);
+  const hasCrit=S.must.length||S.nice.length||S.years||S.edu||S.city.trim();
+  let rows=cands.map(c=>({c,a:analyze(c)}));
+  const outN=rows.filter(r=>r.a.status==='nao').length;
+  if(hideOut)rows=rows.filter(r=>r.a.status!=='nao');
+  rows.sort((x,y)=>sortBy==='name'?x.c.name.localeCompare(y.c.name):(y.a.score-x.a.score)||x.c.name.localeCompare(y.c.name));
+  if(!cands.length){$('#results').innerHTML='';return}
+  $('#results').innerHTML=`<div class="listhead"><h2>${cands.length} ${cands.length===1?'candidato':'candidatos'}${hasCrit?` · ${cands.length-outN} atendem`:''}</h2>
+    <div class="actions"><label class="chk"><input type="checkbox" id="hide" ${hideOut?'checked':''}> Ocultar quem não atende</label>
+    <select id="sort" aria-label="Ordenar" style="width:auto"><option value="score" ${sortBy==='score'?'selected':''}>Maior pontuação</option><option value="name" ${sortBy==='name'?'selected':''}>Nome</option></select>
+    <button class="btn" id="csv">Exportar CSV</button><button class="btn" id="clear">Limpar lista</button></div></div>`+
+    (rows.length?rows.map(({c,a})=>rowHtml(c,a,hasCrit)).join(''):'<p class="empty">Nenhum candidato atende aos requisitos obrigatórios.</p>');
+  $('#hide').onchange=e=>{hideOut=e.target.checked;render()};
+  $('#sort').onchange=e=>{sortBy=e.target.value;render()};
+  $('#clear').onclick=()=>{cands=[];open.clear();render()};
+  $('#csv').onclick=exportCsv;
+}
+function rowHtml(c,a,hasCrit){
+  const isOpen=open.has(c.id),[lab,cls]=a.err?['Ilegível','s-nao']:hasCrit?ST[a.status]:['Sem critérios','s-poss'];
+  const chips=(h,m)=>h.map(x=>`<span class="chip y">${show(x)}</span>`).join('')+m.map(x=>`<span class="chip n">${show(x)}</span>`).join('');
+  let d='';
+  if(isOpen){
+    d=`<div class="detail">`;
+    if(a.err)d+=`<p class="hint" style="margin-top:14px">Não foi possível ler este arquivo, nem por reconhecimento de imagem. Tente uma versão com melhor resolução ou em outro formato.</p>`;
+    else{
+      if(S.must.length)d+=`<h3>Obrigatórios</h3><div class="chips">${chips(a.hitM,a.missM)}</div>`;
+      if(S.nice.length)d+=`<h3>Desejáveis</h3><div class="chips">${chips(a.hitN,a.missN)}</div>`;
+      d+=`<div class="facts"><span>Experiência citada: ${a.years?a.years+' anos':'não identificada'}</span><span>Formação: ${LV[a.level]}</span>${S.city.trim()?`<span>${a.city?'Menciona':'Não menciona'} ${esc(S.city)}</span>`:''}</div>`;
+      if(a.snips.length){d+=`<h3>Trechos encontrados</h3>`+a.snips.map(s=>{const st=Math.max(0,s.i-50),r=c.raw;return`<blockquote>…${esc(r.slice(st,s.i))}<mark>${esc(r.slice(s.i,s.i+s.len))}</mark>${esc(r.slice(s.i+s.len,s.i+s.len+60))}…</blockquote>`}).join('')}
+    }
+    d+=`<button class="rm" data-rm="${c.id}">Remover candidato</button></div>`;
+  }
+  return`<div class="row ${a.status==='nao'?'out':''}"><button class="rowmain" data-id="${c.id}" aria-expanded="${isOpen}">
+    <div><div class="score">${a.err||!hasCrit?'–':a.score}</div><div class="bar"><i style="width:${hasCrit?a.score:0}%"></i></div></div>
+    <div class="who"><b>${esc(c.name)}</b><small>${esc([c.email,c.phone,c.file].filter(Boolean).join('  ·  '))}</small></div>
+    <span class="status ${cls}">${lab}</span></button>${d}</div>`;
+}
+$('#results').addEventListener('click',e=>{
+  const rm=e.target.closest('[data-rm]');if(rm){cands=cands.filter(c=>c.id!==rm.dataset.rm);render();return}
+  const b=e.target.closest('.rowmain');if(b){open.has(b.dataset.id)?open.delete(b.dataset.id):open.add(b.dataset.id);render()}
+});
+function exportCsv(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const head=['Nome','E-mail','Telefone','Pontuação','Situação','Atende','Não atende','Anos citados','Arquivo'];
+  const lines=cands.map(c=>{const a=analyze(c);return[c.name,c.email,c.phone,a.score,ST[a.status][0],[...a.hitM,...a.hitN].join('; '),[...a.missM,...a.missN].join('; '),a.years,c.file].map(q).join(',')});
+  const blob=new Blob(['\ufeff'+[head.map(q).join(','),...lines].join('\n')],{type:'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='triagem.csv';a.click();URL.revokeObjectURL(u);
+}
+$('#file').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>addFiles([...e.dataTransfer.files].filter(f=>/\.(pdf|docx|txt|jpe?g|png)$/i.test(f.name))));
+render();
+</script>
+</body>
+</html>
