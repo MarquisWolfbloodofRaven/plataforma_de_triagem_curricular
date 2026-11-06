@@ -93,6 +93,7 @@ A aplicação possui uma interface responsiva, com layout adaptável para difere
 ## 🎯 Objetivo
 
 O objetivo do projeto é tornar a triagem inicial de currículos mais rápida, organizada e transparente, oferecendo uma ferramenta prática para comparar candidatos com os requisitos de uma oportunidade profissional.
+https://marquiswolfbloodofraven.github.io/plataforma_de_triagem_curricular/
 
 ---
 
